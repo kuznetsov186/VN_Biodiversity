@@ -5,13 +5,14 @@ library(sf)
 #' @param currentProjection raster object of SDM from current time period
 #' @param futureProjection raster object of SDM from future time period
 #' @param threshold a float value of the acceptable threshold for the current projection to make the SDM into a binary
+#' @param PA a shapefile showing protected areas in SEA
 #TESTING
 # PA <- st_read("/home/pgalante/Projects/Vietnam/Protected_areas/VN Protected Areas", "VN_NRs")
 # currentProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LIGCan.tif')
 # futureProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LGMCan.tif')
 # threshold <- 0.5
 
-PAareaChange <- function(currentProjection, futureProjection, threshold){
+PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
   require(raster)
   require(sf)
   currentProjection[currentProjection < threshold] <- NA
