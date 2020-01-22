@@ -26,8 +26,12 @@ PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
   futurePoly <- as(futurePoly, "sf")
   currentArea <- st_intersection(currentPoly, PA) %>% st_area()
   futureArea <- st_intersection(futurePoly, PA) %>% st_area()
-  areaChange <- currentArea - futureArea
-  areaChangeTab <- sum(areaChange)
+  areaDiffs <- currentArea - futureArea
+  areaChange <- sum(areaChange)
+  curPercent <- (sum(currentArea) / st_area(currentPoly)) * 100
+  futPercent <- (sum(futureArea) / st_area(futurePoly)) * 100
+  areaChangeTab <- cbind(areaChange, curPercent, futPercent, (curPercent - futPercent))
+  colnames(areaChangeTab) <- c("area change", "current proportion protected", "future proportion protected", "proportion change")
   return(areaChangeTab)
 }
 
