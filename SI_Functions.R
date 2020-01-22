@@ -8,8 +8,8 @@ library(sf)
 #' @param PA a shapefile showing protected areas in SEA
 #TESTING
 # PA <- st_read("/home/pgalante/Projects/Vietnam/Protected_areas/VN Protected Areas", "VN_NRs")
-# currentProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LIGCan.tif')
-# futureProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LGMCan.tif')
+# currentProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateKarstUXO/climateKarstUXO.tif')
+# futureProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateOnly/climateOnly.tif')
 # threshold <- 0.5
 
 PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
@@ -25,9 +25,9 @@ PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
   currentPoly <- as(currentPoly, "sf")
   futurePoly <- as(futurePoly, "sf")
   currentArea <- st_intersection(currentPoly, PA) %>% st_area()
-  futureArea <- st_intersection(currentPoly, PA) %>% st_area()
-  PAareaChange <- currentArea - futureArea
-  areaChangeTab <- cbind(currentArea, futureArea, PAareaChange)
+  futureArea <- st_intersection(futurePoly, PA) %>% st_area()
+  areaChange <- currentArea - futureArea
+  areaChangeTab <- sum(areaChange)
   return(areaChangeTab)
 }
 
@@ -37,8 +37,8 @@ PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
 #' @param threshold a float value of the acceptable threshold for the current projection to make the SDM into a binary
 #' @param UXOthreshold a float value to turn the UXO kernel density estimate into a binary map. Default value it 0.25
 # TESTING
-# currentProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LIGCan.tif')
-# futureProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LGMCan.tif')
+# currentProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateKarstUXO/climateKarstUXO.tif')
+# futureProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateOnly/climateOnly.tif')
 # threshold <- 0.5
 # uxo <- raster('/home/pgalante/Projects/Vietnam/USAF_Bombing_database/KerDen/USAF_KDE.tif')
 # UXOthreshold <- 0.25
@@ -61,7 +61,9 @@ deltaUXO <- function(currentProjection, futureProjection, threshold, UXOthreshol
   currentUXO <- st_intersection(currentPoly, uxoPoly)
   futureUXO <- st_intersection(futurePoly, uxoPoly)
   uxoChange <- nrow(currentUXO) - nrow(futureUXO)
-  return(uxoChange)
+  uxoCrossed <- cbind(nrow(currentUXO), nrow(futureUXO), uxoChange)
+  colnames(uxoCrossed) <- c("current # times", "future # times", "change")
+  return(uxoCrossed)
 }
 
 #########  Crossed border?  #########
@@ -70,8 +72,8 @@ deltaUXO <- function(currentProjection, futureProjection, threshold, UXOthreshol
 #' @param threshold a float value of the acceptable threshold for the current projection to make the SDM into a binary
 #' @param boundaries a shapefile of administratice boundaries of interest for range crossings 
 # TESTING
-# currentProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LIGCan.tif')
-# futureProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LGMCan.tif')
+# currentProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateKarstUXO/climateKarstUXO.tif')
+# futureProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateOnly/climateOnly.tif')
 # threshold <- 0.5
 # boundaries <- st_read("/home/pgalante/layers/countries", "ne_50m_admin_0_countries")
 
@@ -91,7 +93,9 @@ bordersChanged <- function(currentProjection, futureProjection, threshold, bound
   currentInts <- st_intersection(currentPoly, boundaries)
   futureInts <-  st_intersection(futurePoly, boundaries)
   deltaBords <- nrow(currentInts) - nrow(futureInts)
-  return(deltaBords)
+  bordsChanged <- cbind(nrow(currentInts), nrow(futureInts), deltaBords)
+  colnames(bordsChanged) <- c("current boundaries crossed", "future boundaries crossed", "change")
+  return(bordsChanged)
 }
 
 #########  CENTROID SHIFT  #########
@@ -99,8 +103,8 @@ bordersChanged <- function(currentProjection, futureProjection, threshold, bound
 #' @param futureProjection raster object of SDM from future time period
 #' @param threshold a float value of the acceptable threshold for the current projection to make the SDM into a binary
 # TESTING
-# currentProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LIGCan.tif')
-# futureProjection <- raster('/home/pgalante/Projects/LukeM/canescens/CanescensModel/LGMCan.tif')
+# currentProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateKarstUXO/climateKarstUXO.tif')
+# futureProjection <- raster('/home/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateOnly/climateOnly.tif')
 # threshold <- 0.5
 
 centroidShift <- function(currentProjection, futureProjection, threshold){
@@ -133,6 +137,8 @@ rangeAreaChange <- function(currentProjection, futureProjection, threshold, proj
     return(areaChange)
     } else {
     areaChange <- sum(values(area(currentProjection, na.rm=T, projection = projection)), na.rm=T) - sum(values(area(futureProjection, na.rm=T, projection = projection)), na.rm=T)
+    deltArea <- cbind(sum(values(area(currentProjection, na.rm=T, projection = projection)), na.rm=T), sum(values(area(futureProjection, na.rm=T, projection = projection)), na.rm=T), areaChange)
+    colnames(deltArea) <- c("Current area", "Future area", "Area change")
     return(areaChange)
     }
 }
