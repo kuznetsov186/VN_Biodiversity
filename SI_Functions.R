@@ -79,27 +79,27 @@ PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
 # currentProjection <- raster('C:/Users/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateKarstUXO/climateKarstUXO.tif')
 # futureProjection <- raster('C:/Users/pgalante/Projects/Vietnam/FrancoisiLangur/Reliable_locs/ClimateOnly/climateOnly.tif')
 # threshold <- 0.5
-# uxo <- raster('C:/Users/pgalante/Projects/Vietnam/USAF_Bombing_database/KerDen/USAF_KDE.tif')
+# UXO <- raster('C:/Users/pgalante/Projects/Vietnam/USAF_Bombing_database/KerDen/USAF_KDE.tif')
 # UXOthreshold <- 0.25
 # deltaUXO(currentProjection, futureProjection, threshold, UXOthreshold)
  
-deltaUXO <- function(currentProjection, futureProjection, threshold, UXOthreshold = 0.25){
+deltaUXO <- function(currentProjection, futureProjection, threshold, UXO, UXOthreshold = 0.25){
   require(sf)
   require(raster)
   options(warn = -1)
   
-  sameCRS <- raster::compareCRS(raster::crs(currentProjection), raster::crs(futureProjection), raster::crs(uxo))
+  sameCRS <- raster::compareCRS(raster::crs(currentProjection), raster::crs(futureProjection), raster::crs(UXO))
   if (!sameCRS){
     cat("Projecting rasters to match shapefile - this can take a while if the projections are large\n")
-    currentProjection <- raster::projectRaster(currentProjection, crs(uxo), method = "bilinear")
-    futureProjection <- raster::projectRaster(futureProjection, crs(uxo), method = "bilinear")
+    currentProjection <- raster::projectRaster(currentProjection, crs(UXO), method = "bilinear")
+    futureProjection <- raster::projectRaster(futureProjection, crs(UXO), method = "bilinear")
   }
   
   # Threshold KDE into binary
-  uxo[uxo < UXOthreshold] <- NA
-  uxo[uxo >= UXOthreshold] <- 1
+  UXO[UXO < UXOthreshold] <- NA
+  UXO[UXO >= UXOthreshold] <- 1
   # convert KDE binary to polygon
-  uxoPoly <- as(raster::rasterToPolygons(uxo, fun = NULL, dissolve = T), "sf")
+  uxoPoly <- as(raster::rasterToPolygons(UXO, fun = NULL, dissolve = T), "sf")
   # Threshold current projection to binary and ensure projections are same
   currentProjection[currentProjection < threshold] <- NA
   currentProjection[currentProjection >= threshold] <- 1
