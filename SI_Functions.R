@@ -71,6 +71,7 @@ PAareaChange <- function(currentProjection, futureProjection, threshold, PA){
 #' @param futureProjection raster object of a continuous SDM from future time period
 #' @param threshold a float value of the acceptable threshold for the current projection to make the SDM into a binary
 #' @param UXOthreshold a float value to turn the continuous UXO kernel density estimate into a binary map. Default value it 0.25
+#' @param UXO raster object of UXO
 #' @return matrix showing the current, future, and change in number of times the binary model crossed the barrier
 #' @author Peter Galante <pgalante@@amnh.org>
 # TESTING
@@ -106,7 +107,7 @@ deltaUXO <- function(currentProjection, futureProjection, threshold, UXO, UXOthr
   raster::crs(futureProjection) <- raster::crs(currentProjection)
   # Convert current pred to polygon
   currentPoly <-raster::rasterToPolygons(currentProjection, fun = NULL, dissolve = T)
-  # threhold future projection to binary and convert to polygon
+  # threshold future projection to binary and convert to polygon
   futureProjection[futureProjection < threshold] <- NA
   futureProjection[futureProjection >= threshold] <- 1
   futurePoly <- raster::rasterToPolygons(futureProjection, fun = NULL, dissolve = T)
@@ -189,10 +190,10 @@ centroidShift <- function(currentProjection, futureProjection, threshold){
     require(raster)
     require(geosphere)
     # Threshold projections to binary 
+    currentProjection[currentProjection >= threshold] <- 1  
     currentProjection[currentProjection < threshold] <- NA
-    currentProjection[currentProjection >= threshold] <- 1
-    futureProjection[futureProjection < threshold] <- NA
     futureProjection[futureProjection >= threshold] <- 1
+    futureProjection[futureProjection < threshold] <- NA
     # Convert binary maps to polygons
     currentPoly <-raster::rasterToPolygons(currentProjection, fun = NULL, dissolve = T)
     futurePoly <- raster::rasterToPolygons(futureProjection, dissolve = T)
@@ -220,8 +221,8 @@ centroidShift <- function(currentProjection, futureProjection, threshold){
 rangeAreaChange <- function(currentProjection, futureProjection, threshold, projection = F){
     require(raster)
     # Threshold projections at minimum projection (not binary yet)
-    currentProjection[currentProjection > threshold] <- NA
-    futureProjection[futureProjection > threshold] <- NA
+    currentProjection[currentProjection < threshold] <- NA
+    futureProjection[futureProjection < threshold] <- NA
     # If the rasters are not projected, calculate the difference in km^2 estimated based on WGS84 ellipsoid
     if (is.null(projection)){
     areaChange <- sum(raster::values(raster::area(currentProjection, na.rm=T)), na.rm=T) - sum(raster::values(raster::area(futureProjection, na.rm=T)), na.rm=T)
@@ -231,6 +232,6 @@ rangeAreaChange <- function(currentProjection, futureProjection, threshold, proj
     areaChange <- sum(raster::values(raster::area(currentProjection, na.rm=T, projection = projection)), na.rm=T) - sum(raster::values(raster::area(futureProjection, na.rm=T, projection = projection)), na.rm=T)
     deltArea <- cbind(sum(raster::values(raster::area(currentProjection, na.rm=T, projection = projection)), na.rm=T), sum(raster::values(raster::area(futureProjection, na.rm=T, projection = projection)), na.rm=T), areaChange)
     colnames(deltArea) <- c("Current area", "Future area", "Area change")
-    return(areaChange)
+    return(deltArea)
     }
 }
